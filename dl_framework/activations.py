@@ -26,7 +26,7 @@ def relu(Z):
 def softmax(Z):
     """
     Compute softmax activation for multi-class classification.
-    
+    awdawda
     Arguments:
     Z -- pre-activation values, shape (num_classes, m)
     
