@@ -1,5 +1,5 @@
 """
-Deep Learning Framework - Cost/Loss Functions
+Deep Learning Framework - Cost/Loss Functions den
 """
 import numpy as np
 
