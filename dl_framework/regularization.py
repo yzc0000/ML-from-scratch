@@ -9,11 +9,13 @@ from .activations import relu, relu_backward
 def initialize_bn_running_stats(layers_dims):
     """
     Initialize running statistics for batch normalization inference.
+    Note: BN is NOT applied to the output layer.
     """
     bn_running = {}
     L = len(layers_dims)
     
-    for l in range(1, L):
+    # Only initialize for hidden layers (1 to L-1), NOT the output layer
+    for l in range(1, L - 1):
         bn_running['running_mean' + str(l)] = np.zeros((layers_dims[l], 1))
         bn_running['running_var' + str(l)] = np.ones((layers_dims[l], 1))
     

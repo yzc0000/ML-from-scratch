@@ -23,7 +23,7 @@ def model(X, Y, layers_dims,
           beta=0.9, beta1=0.9, beta2=0.999, epsilon=1e-8,
           mini_batch_size=64, num_epochs=5000,
           lr_decay=None, decay_rate=0,
-          init_method="he", print_cost=True, plot_cost=True):
+          init_method="he", print_cost=True, print_interval=100, print_lr=True, plot_cost=True):
           
     costs = []
     t = 0
@@ -102,19 +102,19 @@ def model(X, Y, layers_dims,
             learning_rate = lr_decay(learning_rate0, epoch, decay_rate)
 
         # Logging
-        if print_cost and epoch % 1000 == 0:
+        if print_cost and epoch % print_interval == 0:
             print(f"Cost after epoch {epoch}: {cost_avg:.6f}")
-            if lr_decay:
+            if lr_decay and print_lr:
                 print(f"  Learning rate: {learning_rate:.6f}")
 
-        if epoch % 100 == 0:
+        if epoch % print_interval == 0:
             costs.append(cost_avg)
 
     # Plot cost
     if plot_cost:
         plt.plot(costs)
         plt.ylabel('Cost')
-        plt.xlabel('Epochs (per 100)')
+        plt.xlabel(f'Epochs (per {print_interval})')
         plt.title(f"Learning rate = {learning_rate}")
         plt.show()
 

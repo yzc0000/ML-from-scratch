@@ -30,12 +30,13 @@ def initialize_parameters(layers_dims, method="he", seed=3):
 def initialize_bn_parameters(layers_dims):
     """
     Initialize batch normalization parameters (gamma and beta) for each hidden layer.
-    
+    Note: BN is NOT applied to the output layer.
     """
     bn_params = {}
     L = len(layers_dims)
     
-    for l in range(1, L):
+    # Only initialize for hidden layers (1 to L-1), NOT the output layer
+    for l in range(1, L - 1):
         bn_params['gamma' + str(l)] = np.ones((layers_dims[l], 1))
         bn_params['beta' + str(l)] = np.zeros((layers_dims[l], 1))
     

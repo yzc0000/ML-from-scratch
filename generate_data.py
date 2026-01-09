@@ -237,11 +237,11 @@ def test_on_large_linear():
     X_train, Y_train, X_test, Y_test = train_test_split(X, Y, test_ratio=0.2)
     
     params, _, _, costs = model(
-        X_train, Y_train, [20, 32, 16, 1],
+        X_train, Y_train, [20, 32, 16, 8, 1],
         output="sigmoid",
         optimizer="adam",
         learning_rate=0.001,
-        num_epochs=1000,
+        num_epochs=2000,
         print_cost=True,
         plot_cost=False
     )
