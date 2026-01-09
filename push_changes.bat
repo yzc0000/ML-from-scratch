@@ -9,7 +9,7 @@ echo Committing...
 git commit -m "%msg%"
 
 echo Pushing to GitHub...
-git push
+git push -u origin master
 
 echo Done!
 pause
