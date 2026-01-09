@@ -9,7 +9,6 @@ A fully-functional deep learning framework built from scratch using only NumPy. 
 | **MNIST** | 98%+ | [784, 256, 128, 64, 32, 10] |
 | **Fashion-MNIST** | 90.28% | [784, 512, 256, 128, 64, 10] |
 
-These results match or exceed typical MLP benchmarks on both datasets.
 
 ## ✨ Features
 
