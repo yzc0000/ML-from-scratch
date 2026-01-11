@@ -3,8 +3,6 @@ Deep Learning Framework - Regularization (Batch Norm, Dropout, L2)
 """
 import numpy as np
 
-from .activations import relu, relu_backward
-
 
 def initialize_bn_running_stats(layers_dims):
     """
@@ -86,10 +84,12 @@ def dropout_forward(A, keep_prob):
     D = np.random.rand(*A.shape)
     D = (D < keep_prob).astype(int)
     A = A * D / keep_prob
-    return A, D
+    cache = (D, keep_prob)
+    return A, cache
 
 
-def dropout_backward(dA, D, keep_prob):
+def dropout_backward(dA, cache):
     """Apply dropout mask during backpropagation."""
+    D, keep_prob = cache
     dA = dA * D / keep_prob
     return dA

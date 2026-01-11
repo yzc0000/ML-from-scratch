@@ -127,7 +127,8 @@ def test_fashion_mnist():
         print_cost=True,
         print_interval=1,
         print_lr=True,
-        plot_cost=True
+        plot_cost=True,
+        keep_prob = 0.81    
     )
     
     # Evaluate on test set

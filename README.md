@@ -147,24 +147,6 @@ python generate_data.py
 | `print_interval` | int | 100 | Print cost every N epochs |
 | `print_lr` | bool | True | Print learning rate (when using lr_decay) |
 
-## 🏗️ Architecture Notes
-
-- **Batch Normalization** is applied to hidden layers only (not output layer)
-- **BatchNorm placement**: Applied on Z (before activation), following the original paper
-- **Input layer size** must match your data dimensions (e.g., 784 for MNIST)
-
-## 📈 Training Tips
-
-1. **Start with Adam optimizer** - Best default choice
-2. **Use He initialization** for ReLU networks
-3. **Enable BatchNorm** for faster, more stable training
-4. **Add L2 regularization** (lambd=0.001) if overfitting
-5. **Use learning rate decay** for better final convergence
-
-## 📝 License
-
-MIT License - Feel free to use and modify!
-
 ---
 
 *Built as a learning project to understand deep learning fundamentals from first principles.*

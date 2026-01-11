@@ -61,4 +61,18 @@ from .utils import (
 )
 
 # Models
-from .models import model, predict, accuracy
+from .models import model, predict, accuracy, cnn_model, cnn_predict
+
+# CNN Layers (included in layers.py)
+from .layers import (
+    conv_forward, conv_backward,
+    pool_forward, pool_backward,
+    flatten_forward, flatten_backward,
+    residual_forward, residual_backward,
+    CNN_model_forward, CNN_model_backward
+)
+
+# CNN Initialization and Optimizers
+from .initialization import initialize_conv_parameters, initialize_cnn_parameters
+
+

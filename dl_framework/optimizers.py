@@ -41,41 +41,63 @@ def update_parameters_with_momentum(parameters, grads, v, beta, learning_rate):
 
 
 def initialize_adam(parameters):
-    """Initialize v and s for Adam optimizer."""
-    L = len(parameters) // 2
+    """
+    Initialize v and s for Adam optimizer.
+    
+    Arguments:
+    parameters -- python dictionary containing your parameters.
+                    
+    Returns:
+    v -- python dictionary that will contain the exponentially weighted average of the gradient.
+    s -- python dictionary that will contain the exponentially weighted average of the squared gradient.
+    """
     v = {}
     s = {}
 
-    for l in range(1, L + 1):
-        v["dW" + str(l)] = np.zeros(parameters["W" + str(l)].shape)
-        v["db" + str(l)] = np.zeros(parameters["b" + str(l)].shape)
-        s["dW" + str(l)] = np.zeros(parameters["W" + str(l)].shape)
-        s["db" + str(l)] = np.zeros(parameters["b" + str(l)].shape)
+    for key in parameters:
+        v[key] = np.zeros_like(parameters[key])
+        s[key] = np.zeros_like(parameters[key])
 
     return v, s
 
 
 def update_parameters_with_adam(parameters, grads, v, s, t, learning_rate=0.01,
                                 beta1=0.9, beta2=0.999, epsilon=1e-8):
-    """Update parameters using Adam optimizer."""
-    L = len(parameters) // 2
-    v_corrected = {}
-    s_corrected = {}
+    """
+    Update parameters using Adam optimizer.
+    
+    Arguments:
+    parameters -- dict of parameters (W1, b1, ..., or W_conv1, etc.)
+    grads -- dict of gradients (keys prefixed with 'd')
+    v -- dict of velocity (first moment)
+    s -- dict of squared velocity (second moment)
+    t -- Adam timestep
+    learning_rate -- step size
+    beta1 -- exponential decay for first moment
+    beta2 -- exponential decay for second moment
+    epsilon -- small value for numerical stability
+    
+    Returns:
+    parameters -- updated parameters
+    v -- updated velocity
+    s -- updated squared velocity
+    """
+    for key in parameters:
+        grad_key = "d" + key
+        # Only update if gradient exists (some params might be fixed/unused)
+        if grad_key in grads:
+            # Update biased first moment
+            v[key] = beta1 * v[key] + (1 - beta1) * grads[grad_key]
+            
+            # Update biased second moment
+            s[key] = beta2 * s[key] + (1 - beta2) * (grads[grad_key] ** 2)
 
-    for l in range(1, L + 1):
-        v["dW" + str(l)] = beta1 * v["dW" + str(l)] + (1 - beta1) * grads["dW" + str(l)]
-        v["db" + str(l)] = beta1 * v["db" + str(l)] + (1 - beta1) * grads["db" + str(l)]
+            # Bias correction
+            v_corrected = v[key] / (1 - beta1 ** t)
+            s_corrected = s[key] / (1 - beta2 ** t)
 
-        v_corrected["dW" + str(l)] = v["dW" + str(l)] / (1 - np.power(beta1, t))
-        v_corrected["db" + str(l)] = v["db" + str(l)] / (1 - np.power(beta1, t))
+            # Update parameters
+            parameters[key] -= learning_rate * v_corrected / (np.sqrt(s_corrected) + epsilon)
 
-        s["dW" + str(l)] = beta2 * s["dW" + str(l)] + (1 - beta2) * (grads["dW" + str(l)] ** 2)
-        s["db" + str(l)] = beta2 * s["db" + str(l)] + (1 - beta2) * (grads["db" + str(l)] ** 2)
+    return parameters, v, s
 
-        s_corrected["dW" + str(l)] = s["dW" + str(l)] / (1 - np.power(beta2, t))
-        s_corrected["db" + str(l)] = s["db" + str(l)] / (1 - np.power(beta2, t))
-
-        parameters["W" + str(l)] -= learning_rate * v_corrected["dW" + str(l)] / (np.sqrt(s_corrected["dW" + str(l)]) + epsilon)
-        parameters["b" + str(l)] -= learning_rate * v_corrected["db" + str(l)] / (np.sqrt(s_corrected["db" + str(l)]) + epsilon)
-
-    return parameters, v, s, v_corrected, s_corrected
