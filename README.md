@@ -1,6 +1,7 @@
 # Deep Learning Framework from Scratch
 
 A fully-functional deep learning framework built from scratch using only NumPy. No TensorFlow, no PyTorch, just pure Python and linear algebra.
+
 *Built as a learning project to understand deep learning fundamentals from first principles.*
 ## 🎯 Test Results
 
