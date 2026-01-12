@@ -62,9 +62,9 @@ def initialize_adam(parameters):
 
 
 def update_parameters_with_adam(parameters, grads, v, s, t, learning_rate=0.01,
-                                beta1=0.9, beta2=0.999, epsilon=1e-8):
+                                beta1=0.9, beta2=0.999, epsilon=1e-8, weight_decay=0):
     """
-    Update parameters using Adam optimizer.
+    Update parameters using Adam optimizer with optional weight decay (AdamW).
     
     Arguments:
     parameters -- dict of parameters (W1, b1, ..., or W_conv1, etc.)
@@ -76,11 +76,17 @@ def update_parameters_with_adam(parameters, grads, v, s, t, learning_rate=0.01,
     beta1 -- exponential decay for first moment
     beta2 -- exponential decay for second moment
     epsilon -- small value for numerical stability
+    weight_decay -- decoupled weight decay coefficient (AdamW style, default 0)
     
     Returns:
     parameters -- updated parameters
     v -- updated velocity
     s -- updated squared velocity
+    
+    Note:
+    - weight_decay applies decoupled weight decay (AdamW): W = W - lr*weight_decay*W
+    - This is different from L2 regularization (lambd) which adds to gradients
+    - For best results, use EITHER lambd (L2 reg) OR weight_decay, not both
     """
     for key in parameters:
         grad_key = "d" + key
@@ -96,8 +102,12 @@ def update_parameters_with_adam(parameters, grads, v, s, t, learning_rate=0.01,
             v_corrected = v[key] / (1 - beta1 ** t)
             s_corrected = s[key] / (1 - beta2 ** t)
 
-            # Update parameters
+            # Update parameters (Adam step)
             parameters[key] -= learning_rate * v_corrected / (np.sqrt(s_corrected) + epsilon)
+            
+            # Apply decoupled weight decay (AdamW) - only to weights, not biases
+            if weight_decay > 0 and key.startswith('W'):
+                parameters[key] -= learning_rate * weight_decay * parameters[key]
 
     return parameters, v, s
 

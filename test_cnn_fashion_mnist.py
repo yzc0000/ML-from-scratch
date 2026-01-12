@@ -114,6 +114,7 @@ def test_cnn():
         num_epochs=30,
         mini_batch_size=64,
         learning_rate=0.001,
+        lambd=0.0001,
         print_cost=True,
         print_interval=1,
         plot_cost=False,

@@ -18,7 +18,7 @@ from .utils import random_mini_batches
 
 def model(X, Y, layers_dims, 
           output="sigmoid",
-          lambd=0, keep_prob=1.0, use_batchnorm=False,
+          lambd=0, keep_prob=1.0, use_batchnorm=False, weight_decay=0,
           optimizer="adam", learning_rate=0.001,
           beta=0.9, beta1=0.9, beta2=0.999, epsilon=1e-8,
           mini_batch_size=64, num_epochs=5000,
@@ -88,7 +88,7 @@ def model(X, Y, layers_dims,
             elif optimizer == "adam":
                 t += 1
                 parameters, v, s = update_parameters_with_adam(
-                    parameters, grads, v, s, t, learning_rate, beta1, beta2, epsilon
+                    parameters, grads, v, s, t, learning_rate, beta1, beta2, epsilon, weight_decay
                 )
             
             # Update batch norm parameters
@@ -166,15 +166,17 @@ def cnn_model(X, Y, layers,
               beta1=0.9, beta2=0.999, epsilon=1e-8,
               mini_batch_size=64, num_epochs=10,
               lr_decay=None, decay_rate=0,
-              lambd=0, keep_prob=1.0,  # Regularization
+              lambd=0, keep_prob=1.0, weight_decay=0,  # Regularization
               print_cost=True, print_interval=1, print_lr=True, plot_cost=True):
     """
     Train a Convolutional Neural Network.
     ...
-    lambd -- L2 regularization hyperparameter
+    lambd -- L2 regularization hyperparameter (adds to gradients)
     keep_prob -- Dropout keep probability (1.0 = no dropout)
-    ...
-    """
+    weight_decay -- Decoupled weight decay (AdamW style, applied separately)
+    
+    Note: Use EITHER lambd OR weight_decay, not both. weight_decay is preferred with Adam.
+    ...\n    """
     m = X.shape[0]
     input_shape = X.shape[1:]  # (n_H, n_W, n_C)
     costs = []
@@ -233,11 +235,11 @@ def cnn_model(X, Y, layers,
                         if param_name in parameters:
                              grads[key] += (lambd / (end - start)) * parameters[param_name]
             
-            # Update parameters (Adam)
+            # Update parameters (Adam with optional weight decay)
             t += 1
             parameters, v, s = update_parameters_with_adam(
                 parameters, grads, v, s, t,
-                learning_rate, beta1, beta2, epsilon
+                learning_rate, beta1, beta2, epsilon, weight_decay
             )
         
         cost_avg = cost_total / num_batches

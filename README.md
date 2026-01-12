@@ -1,13 +1,22 @@
 # Deep Learning Framework from Scratch
 
-A fully-functional deep learning framework built from scratch using only NumPy. No TensorFlow, no PyTorch—just pure Python and linear algebra.
-
+A fully-functional deep learning framework built from scratch using only NumPy. No TensorFlow, no PyTorch, just pure Python and linear algebra.
+*Built as a learning project to understand deep learning fundamentals from first principles.*
 ## 🎯 Test Results
+
+### Fully Connected Networks
 
 | Dataset | Accuracy | Architecture |
 |---------|----------|--------------|
-| **MNIST** | 98%+ | [784, 256, 128, 64, 32, 10] |
-| **Fashion-MNIST** | 90.28% | [784, 512, 256, 128, 64, 10] |
+| **MNIST** | 98.54%+ | [784, 256, 128, 64, 32, 10] |
+| **Fashion-MNIST** | 90.56% | [784, 512, 256, 128, 64, 10] |
+
+### Convolutional Neural Networks (CNN)
+
+| Dataset | Accuracy | Architecture |
+|---------|----------|--------------|
+| **MNIST (CNN)** | 98.92% | Conv(8) → Pool → Conv(16) → Pool → Dense(64) → Dense(10) |
+| **Fashion-MNIST (CNN)** | 91.41% | Conv(8) → Pool → Conv(16) → Pool → Dense(64) → Dense(10) |
 
 
 ## ✨ Features
@@ -17,6 +26,12 @@ A fully-functional deep learning framework built from scratch using only NumPy. 
 - **Backpropagation** - Automatic gradient computation
 - **Multi-class Classification** - Softmax + Cross-entropy loss
 - **Binary Classification** - Sigmoid + Binary cross-entropy
+
+### CNN Components
+- **Convolutional Layers** - Vectorized im2col implementation
+- **Pooling Layers** - Max pooling and average pooling
+- **Residual Blocks** - ResNet-style skip connections
+- **Flatten Layer** - Automatic shape inference
 
 ### Optimizers
 - Gradient Descent (SGD)
@@ -42,15 +57,17 @@ ML from scratch/
 ├── dl_framework/
 │   ├── __init__.py          # Main exports
 │   ├── activations.py       # ReLU, Sigmoid, Softmax, Tanh
-│   ├── initialization.py    # He, Xavier, Random, Zero init
-│   ├── layers.py            # Forward/Backward propagation
+│   ├── initialization.py    # He, Xavier, Random, Zero init (FC + CNN)
+│   ├── layers.py            # Forward/Backward propagation (FC + CNN)
 │   ├── losses.py            # Cross-entropy, BCE
-│   ├── models.py            # Main training loop
+│   ├── models.py            # Training loops (model, cnn_model)
 │   ├── optimizers.py        # SGD, Momentum, Adam
-│   ├── regularization.py    # BatchNorm, Dropout, L2
-│   └── utils.py             # Mini-batches, LR decay, save/load
-├── test_mnist.py            # MNIST digit classification test
-├── test_fashion_mnist.py    # Fashion-MNIST clothing classification
+│   ├── regularization.py    # BatchNorm, Dropout
+│   └── utils.py             # Mini-batches, LR decay, im2col, save/load
+├── test_mnist.py            # MNIST FC network test
+├── test_fashion_mnist.py    # Fashion-MNIST FC network test
+├── test_cnn_mnist.py        # MNIST CNN test
+├── test_cnn_fashion_mnist.py # Fashion-MNIST CNN test (+ ResNet)
 └── generate_data.py         # Synthetic datasets (circles, moons, spiral)
 ```
 
@@ -114,14 +131,28 @@ params, _, _, costs = model(
 
 ## 🧪 Running Tests
 
-### MNIST (Handwritten Digits)
+### Fully Connected Networks
 ```bash
+# MNIST (Handwritten Digits)
 python test_mnist.py
+
+# Fashion-MNIST (Clothing Classification)
+python test_fashion_mnist.py
 ```
 
-### Fashion-MNIST (Clothing Classification)
+### Convolutional Neural Networks
 ```bash
-python test_fashion_mnist.py
+# MNIST CNN (Simple)
+python test_cnn_mnist.py
+
+# MNIST CNN (Deep VGG-style)
+python test_cnn_mnist.py deep
+
+# Fashion-MNIST CNN
+python test_cnn_fashion_mnist.py
+
+# Fashion-MNIST ResNet
+python test_cnn_fashion_mnist.py resnet
 ```
 
 ### Synthetic Datasets
@@ -149,4 +180,4 @@ python generate_data.py
 
 ---
 
-*Built as a learning project to understand deep learning fundamentals from first principles.*
+
