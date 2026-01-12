@@ -16,8 +16,8 @@ A fully-functional deep learning framework built from scratch using only NumPy. 
 
 | Dataset | Accuracy | Architecture |
 |---------|----------|--------------|
-| **MNIST (CNN)** | 98.92% | Conv(8) → Pool → Conv(16) → Pool → Dense(64) → Dense(10) |
-| **Fashion-MNIST (CNN)** | 91.41% | Conv(8) → Pool → Conv(16) → Pool → Dense(64) → Dense(10) |
+| **MNIST** | 98.92% | Conv(8) → Pool → Conv(16) → Pool → Dense(64) → Dense(10) |
+| **Fashion-MNIST** | 91.41% | Conv(8) → Pool → Conv(16) → Pool → Dense(64) → Dense(10) |
 
 
 ## ✨ Features
