@@ -3,7 +3,7 @@ Deep Learning Framework - Forward/Backward Propagation Layers
 """
 import numpy as np
 
-from .activations import sigmoid, relu, softmax, sigmoid_backward, relu_backward
+from .activations import sigmoid, relu, softmax, sigmoid_backward, relu_backward, linear_activation, linear_backward
 from .regularization import batchnorm_forward, batchnorm_backward, dropout_forward, dropout_backward
 
 
@@ -80,6 +80,8 @@ def L_model_forward(X, parameters, output="sigmoid", keep_prob=1.0,
     
     if output == "softmax":
         AL, activation_cache = softmax(Z)
+    elif output == "linear":
+        AL, activation_cache = linear_activation(Z)
     else:  # sigmoid
         AL, activation_cache = sigmoid(Z)
     
@@ -106,6 +108,9 @@ def L_model_backward(AL, Y, caches, parameters, output="sigmoid", keep_prob=1.0,
     
     epsilon = 1e-15  # Prevent divide by zero
     if output == "softmax":
+        dZ = AL - Y
+    elif output == "linear":
+        # MSE gradient: dZ = (AL - Y) / m (but we divide by m later in linear backward)
         dZ = AL - Y
     else:  # sigmoid
         AL_clipped = np.clip(AL, epsilon, 1 - epsilon)
@@ -698,16 +703,20 @@ def residual_backward(dA, cache, res_idx):
 
 
 
-def CNN_model_forward(X, layers, parameters, keep_prob=1.0, training=True):
+
+def CNN_model_forward(X, layers, parameters, keep_prob=1.0, training=True,
+                      bn_params=None, bn_running=None):
     """
     Forward propagation for the entire CNN.
     
     Arguments:
-    X -- Input data
+    X -- Input data, shape (m, n_H, n_W, n_C)
     layers -- List of layer configurations
     parameters -- Dictionary containing parameters
     keep_prob -- Dropout keep probability (1.0 = no dropout)
     training -- Whether in training mode (dropout only applied if True)
+    bn_params -- Batch norm parameters (gamma, beta) for conv layers (optional)
+    bn_running -- Batch norm running stats for inference (optional)
     
     Returns:
     AL -- Output of the last layer
@@ -717,6 +726,7 @@ def CNN_model_forward(X, layers, parameters, keep_prob=1.0, training=True):
     A = X
     L = len(layers)
     use_dropout = keep_prob < 1.0 and training
+    use_batchnorm = bn_params is not None
     conv_idx = 0
     dense_idx = 0
     
@@ -732,7 +742,33 @@ def CNN_model_forward(X, layers, parameters, keep_prob=1.0, training=True):
             A, cache = conv_forward(A, W, b, hparameters)
             caches.append((layer_type, cache, conv_idx))
             
-            # Activation
+            # Batch Normalization BEFORE activation (Conv -> BN -> ReLU)
+            if use_batchnorm:
+                # Get shape: (m, n_H, n_W, n_C)
+                m_batch, n_H, n_W, n_C = A.shape
+                
+                # Reshape: (m, H, W, C) -> (C, m*H*W)
+                A_reshaped = A.transpose(3, 0, 1, 2).reshape(n_C, -1)
+                
+                # Get gamma, beta for this conv layer
+                gamma = bn_params[f'gamma_conv{conv_idx}']
+                beta = bn_params[f'beta_conv{conv_idx}']
+                
+                # Apply batch norm (reusing existing function)
+                A_norm, bn_cache = batchnorm_forward(
+                    A_reshaped, gamma, beta,
+                    bn_running=bn_running,
+                    layer_idx=f'_conv{conv_idx}',  # Use string key for CNN
+                    training=training
+                )
+                
+                # Reshape back: (C, m*H*W) -> (m, H, W, C)
+                A = A_norm.reshape(n_C, m_batch, n_H, n_W).transpose(1, 2, 3, 0)
+                
+                # Store BN cache with shape info for backward pass
+                caches.append(("bn_conv", bn_cache, conv_idx, (m_batch, n_H, n_W, n_C)))
+            
+            # Activation AFTER batch norm
             if layer["activation"] == "relu":
                 A, activation_cache = relu(A)
                 caches.append(("relu", activation_cache))
@@ -785,12 +821,17 @@ def CNN_model_forward(X, layers, parameters, keep_prob=1.0, training=True):
     return A, caches
 
 
-def CNN_model_backward(AL, Y, layers, caches, keep_prob=1.0):
+def CNN_model_backward(AL, Y, layers, caches, keep_prob=1.0, use_batchnorm=False):
     """
     Backward propagation for the entire CNN.
     
     Arguments:
+    AL -- Output of forward prop
+    Y -- True labels
+    layers -- Layer configurations
+    caches -- Caches from forward prop
     keep_prob -- Dropout keep probability. If < 1.0, expects dropout caches after dense_relu.
+    use_batchnorm -- Whether batch normalization was used in forward pass
     """
     grads = {}
     L = len(layers)
@@ -867,12 +908,40 @@ def CNN_model_backward(AL, Y, layers, caches, keep_prob=1.0):
             dA_prev = pool_backward(dA_prev, cache_val, mode=mode)
             
         elif layer_type == "conv":
-            # Pop relu
-            relu_entry = caches.pop() # ("relu", cache)
+            # Backward order: ReLU -> BN -> Conv (reverse of forward: Conv -> BN -> ReLU)
+            
+            # 1. Pop relu first
+            relu_entry = caches.pop()  # ("relu", cache)
             dA_prev = relu_backward(dA_prev, relu_entry[1])
             
-            # Pop conv - cache now has 3 elements: ("conv", cache, conv_idx)
-            conv_entry = caches.pop()
+            # 2. Then pop and process batch norm if enabled
+            if use_batchnorm:
+                bn_entry = caches.pop()
+                if bn_entry[0] == "bn_conv":
+                    # bn_entry = ("bn_conv", bn_cache, conv_idx, (m, n_H, n_W, n_C))
+                    bn_cache = bn_entry[1]
+                    conv_idx = bn_entry[2]
+                    orig_shape = bn_entry[3]  # (m, n_H, n_W, n_C)
+                    m_batch, n_H, n_W, n_C = orig_shape
+                    
+                    # Reshape dA_prev: (m, H, W, C) -> (C, m*H*W)
+                    dA_reshaped = dA_prev.transpose(3, 0, 1, 2).reshape(n_C, -1)
+                    
+                    # Apply batch norm backward
+                    dA_norm, dgamma, dbeta = batchnorm_backward(dA_reshaped, bn_cache)
+                    
+                    # Store BN gradients
+                    grads[f'dgamma_conv{conv_idx}'] = dgamma
+                    grads[f'dbeta_conv{conv_idx}'] = dbeta
+                    
+                    # Reshape back: (C, m*H*W) -> (m, H, W, C)
+                    dA_prev = dA_norm.reshape(n_C, m_batch, n_H, n_W).transpose(1, 2, 3, 0)
+                else:
+                    # Not a BN cache, put it back
+                    caches.append(bn_entry)
+            
+            # 3. Finally pop and process conv
+            conv_entry = caches.pop()  # ("conv", cache, conv_idx)
             conv_cache = conv_entry[1]
             conv_idx = conv_entry[2]
             dA_prev, dW, db = conv_backward(dA_prev, conv_cache)

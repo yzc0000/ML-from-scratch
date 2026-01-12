@@ -137,6 +137,9 @@ def predict(X, parameters, output="sigmoid", bn_params=None, bn_running=None):
     
     if output == "softmax":
         predictions = np.argmax(AL, axis=0)
+    elif output == "linear":
+        # For regression, return raw predicted values directly
+        predictions = AL
     else:  # sigmoid
         predictions = (AL > 0.5).astype(int)
     
@@ -157,7 +160,7 @@ def accuracy(predictions, Y):
 # =============================================================================
 
 from .layers import CNN_model_forward, CNN_model_backward
-from .initialization import initialize_cnn_parameters
+from .initialization import initialize_cnn_parameters, initialize_cnn_bn_parameters, initialize_cnn_bn_running_stats
 
 
 
@@ -167,16 +170,39 @@ def cnn_model(X, Y, layers,
               mini_batch_size=64, num_epochs=10,
               lr_decay=None, decay_rate=0,
               lambd=0, keep_prob=1.0, weight_decay=0,  # Regularization
+              use_batchnorm=False,  # Batch Normalization
               print_cost=True, print_interval=1, print_lr=True, plot_cost=True):
     """
     Train a Convolutional Neural Network.
-    ...
+    
+    Arguments:
+    X -- Input data, shape (m, n_H, n_W, n_C)
+    Y -- Labels, shape (num_classes, m)
+    layers -- List of layer configurations
+    optimizer -- Currently only "adam" supported
+    learning_rate -- Learning rate for optimizer
+    beta1, beta2, epsilon -- Adam hyperparameters
+    mini_batch_size -- Size of mini-batches
+    num_epochs -- Number of training epochs
+    lr_decay -- Learning rate decay function (optional)
+    decay_rate -- Decay rate for lr_decay
     lambd -- L2 regularization hyperparameter (adds to gradients)
     keep_prob -- Dropout keep probability (1.0 = no dropout)
     weight_decay -- Decoupled weight decay (AdamW style, applied separately)
+    use_batchnorm -- Whether to use batch normalization after conv layers
+    print_cost -- Whether to print cost during training
+    print_interval -- How often to print cost
+    print_lr -- Whether to print learning rate
+    plot_cost -- Whether to plot cost curve
+    
+    Returns:
+    parameters -- Trained model parameters
+    costs -- Training cost history
+    bn_params -- BN parameters (if use_batchnorm=True, else None)
+    bn_running -- BN running stats (if use_batchnorm=True, else None)
     
     Note: Use EITHER lambd OR weight_decay, not both. weight_decay is preferred with Adam.
-    ...\n    """
+    """
     m = X.shape[0]
     input_shape = X.shape[1:]  # (n_H, n_W, n_C)
     costs = []
@@ -186,6 +212,14 @@ def cnn_model(X, Y, layers,
     # Initialize parameters
     parameters = initialize_cnn_parameters(layers, input_shape)
     v, s = initialize_adam(parameters)
+    
+    # Initialize batch normalization (optional)
+    if use_batchnorm:
+        bn_params = initialize_cnn_bn_parameters(layers, input_shape)
+        bn_running = initialize_cnn_bn_running_stats(layers, input_shape)
+    else:
+        bn_params = None
+        bn_running = None
     
     # Training loop
     for epoch in range(num_epochs):
@@ -204,8 +238,12 @@ def cnn_model(X, Y, layers,
             X_batch = X_shuffled[start:end]
             Y_batch = Y_shuffled[:, start:end]
             
-            # Forward propagation (training=True for dropout)
-            AL, caches = CNN_model_forward(X_batch, layers, parameters, keep_prob=keep_prob, training=True)
+            # Forward propagation (training=True for dropout and BN)
+            AL, caches = CNN_model_forward(
+                X_batch, layers, parameters, 
+                keep_prob=keep_prob, training=True,
+                bn_params=bn_params, bn_running=bn_running
+            )
             
             # Compute cost (cross-entropy + L2)
             eps = 1e-15
@@ -224,7 +262,10 @@ def cnn_model(X, Y, layers,
             cost_total += cost
             
             # Backward propagation
-            grads = CNN_model_backward(AL, Y_batch, layers, caches, keep_prob=keep_prob)
+            grads = CNN_model_backward(
+                AL, Y_batch, layers, caches, 
+                keep_prob=keep_prob, use_batchnorm=use_batchnorm
+            )
             
             # Add L2 Gradient Regularization
             if lambd > 0:
@@ -241,6 +282,13 @@ def cnn_model(X, Y, layers,
                 parameters, grads, v, s, t,
                 learning_rate, beta1, beta2, epsilon, weight_decay
             )
+            
+            # Update batch norm parameters (gamma, beta)
+            if use_batchnorm:
+                for key in bn_params.keys():
+                    grad_key = 'd' + key
+                    if grad_key in grads:
+                        bn_params[key] -= learning_rate * grads[grad_key]
         
         cost_avg = cost_total / num_batches
         
@@ -263,10 +311,10 @@ def cnn_model(X, Y, layers,
         plt.title(f"CNN Training - Learning rate = {learning_rate}")
         plt.show()
     
-    return parameters, costs
+    return parameters, costs, bn_params, bn_running
 
 
-def cnn_predict(X, layers, parameters):
+def cnn_predict(X, layers, parameters, bn_params=None, bn_running=None):
     """
     Make predictions using trained CNN parameters.
     
@@ -274,11 +322,17 @@ def cnn_predict(X, layers, parameters):
     X -- Input data, shape (m, n_H, n_W, n_C)
     layers -- Layer configurations (same as used in training)
     parameters -- Trained parameters from cnn_model()
+    bn_params -- Batch norm parameters (optional, from training)
+    bn_running -- Batch norm running stats (optional, from training)
     
     Returns:
     predictions -- Predicted class indices
     probabilities -- Class probabilities
     """
-    AL, _ = CNN_model_forward(X, layers, parameters)
+    AL, _ = CNN_model_forward(
+        X, layers, parameters,
+        keep_prob=1.0, training=False,  # Inference mode
+        bn_params=bn_params, bn_running=bn_running
+    )
     predictions = np.argmax(AL, axis=0)
     return predictions, AL

@@ -109,7 +109,7 @@ def test_cnn():
     
     # Train
     print("\nTraining...")
-    parameters, costs = cnn_model(
+    parameters, costs, bn_params, bn_running = cnn_model(
         X_train, Y_train, layers,
         num_epochs=30,
         mini_batch_size=64,
@@ -121,8 +121,6 @@ def test_cnn():
         lr_decay=update_lr,
         decay_rate=0.15,
         print_lr=True,
-
-        
     )
     
     # Evaluate on test set
@@ -197,7 +195,7 @@ def test_resnet():
     
     # Train
     print("\nTraining ResNet...")
-    parameters, costs = cnn_model(
+    parameters, costs, bn_params, bn_running = cnn_model(
         X_train, Y_train, layers,
         num_epochs=30,
         mini_batch_size=64,
@@ -207,8 +205,8 @@ def test_resnet():
         plot_cost=False,
         lr_decay=update_lr,
         decay_rate=0.15,
-        print_lr=True,
-
+        print_lr=True, 
+        use_batchnorm=False
     )
     
     # Evaluate

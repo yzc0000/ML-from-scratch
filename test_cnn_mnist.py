@@ -104,9 +104,9 @@ def test_cnn_simple():
     
     # Train
     print("\nTraining...")
-    parameters, costs = cnn_model(
+    parameters, costs, bn_params, bn_running = cnn_model(
         X_train, Y_train, layers,
-        num_epochs=15,
+        num_epochs=30,
         mini_batch_size=64,
         learning_rate=0.001,
         print_cost=True,
@@ -114,7 +114,8 @@ def test_cnn_simple():
         plot_cost=False,
         lr_decay=update_lr,
         decay_rate=0.1,
-        print_lr=True
+        print_lr=True,
+
     )
     
     # Evaluate on test set
@@ -186,7 +187,7 @@ def test_cnn_deep():
     
     # Train
     print("\nTraining Deep CNN (this will take longer)...")
-    parameters, costs = cnn_model(
+    parameters, costs, bn_params, bn_running = cnn_model(
         X_train, Y_train, layers,
         num_epochs=20,
         mini_batch_size=64,

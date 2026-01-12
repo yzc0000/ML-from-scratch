@@ -172,6 +172,102 @@ def initialize_cnn_parameters(layers, input_shape, seed=1):
     return parameters
 
 
+def initialize_cnn_bn_parameters(layers, input_shape):
+    """
+    Initialize batch normalization parameters (gamma, beta) for CNN conv layers.
+    
+    Arguments:
+    layers -- list of layer configuration dicts
+    input_shape -- tuple (n_H, n_W, n_C) for input images
+    
+    Returns:
+    bn_params -- dict with gamma and beta for each conv layer, shape (n_C, 1)
+    """
+    bn_params = {}
+    current_shape = input_shape
+    conv_idx = 0
+    
+    for layer in layers:
+        if layer["type"] == "conv":
+            conv_idx += 1
+            n_C = layer["filters"]
+            # gamma and beta have shape (n_C, 1) to match reshaped tensor (n_C, m*H*W)
+            bn_params[f'gamma_conv{conv_idx}'] = np.ones((n_C, 1))
+            bn_params[f'beta_conv{conv_idx}'] = np.zeros((n_C, 1))
+            
+            # Update shape
+            f = layer["kernel_size"]
+            n_H = int((current_shape[0] - f + 2 * layer["pad"]) / layer["stride"]) + 1
+            n_W = int((current_shape[1] - f + 2 * layer["pad"]) / layer["stride"]) + 1
+            current_shape = (n_H, n_W, n_C)
+            
+        elif layer["type"] == "pool":
+            f = layer["pool_size"]
+            stride = layer["stride"]
+            n_H = int((current_shape[0] - f) / stride) + 1
+            n_W = int((current_shape[1] - f) / stride) + 1
+            current_shape = (n_H, n_W, current_shape[2])
+            
+        elif layer["type"] == "residual":
+            n_C = layer["filters"]
+            if layer["downsample"]:
+                n_H = current_shape[0] // 2
+                n_W = current_shape[1] // 2
+            else:
+                n_H = current_shape[0]
+                n_W = current_shape[1]
+            current_shape = (n_H, n_W, n_C)
+    
+    return bn_params
+
+
+def initialize_cnn_bn_running_stats(layers, input_shape):
+    """
+    Initialize running statistics for CNN batch normalization inference.
+    
+    Arguments:
+    layers -- list of layer configuration dicts
+    input_shape -- tuple (n_H, n_W, n_C) for input images
+    
+    Returns:
+    bn_running -- dict with running_mean and running_var for each conv layer
+    """
+    bn_running = {}
+    current_shape = input_shape
+    conv_idx = 0
+    
+    for layer in layers:
+        if layer["type"] == "conv":
+            conv_idx += 1
+            n_C = layer["filters"]
+            # Shape (n_C, 1) to match reshaped tensor
+            bn_running[f'running_mean_conv{conv_idx}'] = np.zeros((n_C, 1))
+            bn_running[f'running_var_conv{conv_idx}'] = np.ones((n_C, 1))
+            
+            # Update shape
+            f = layer["kernel_size"]
+            n_H = int((current_shape[0] - f + 2 * layer["pad"]) / layer["stride"]) + 1
+            n_W = int((current_shape[1] - f + 2 * layer["pad"]) / layer["stride"]) + 1
+            current_shape = (n_H, n_W, n_C)
+            
+        elif layer["type"] == "pool":
+            f = layer["pool_size"]
+            stride = layer["stride"]
+            n_H = int((current_shape[0] - f) / stride) + 1
+            n_W = int((current_shape[1] - f) / stride) + 1
+            current_shape = (n_H, n_W, current_shape[2])
+            
+        elif layer["type"] == "residual":
+            n_C = layer["filters"]
+            if layer["downsample"]:
+                n_H = current_shape[0] // 2
+                n_W = current_shape[1] // 2
+            else:
+                n_H = current_shape[0]
+                n_W = current_shape[1]
+            current_shape = (n_H, n_W, n_C)
+    
+    return bn_running
 
 
 

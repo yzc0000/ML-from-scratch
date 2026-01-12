@@ -22,8 +22,8 @@ Usage:
 
 # Activations
 from .activations import (
-    sigmoid, relu, softmax, tanh_activation,
-    sigmoid_backward, relu_backward, softmax_backward, tanh_backward
+    sigmoid, relu, softmax, tanh_activation, linear_activation,
+    sigmoid_backward, relu_backward, softmax_backward, tanh_backward, linear_backward
 )
 
 # Initialization
@@ -73,6 +73,9 @@ from .layers import (
 )
 
 # CNN Initialization and Optimizers
-from .initialization import initialize_conv_parameters, initialize_cnn_parameters
+from .initialization import (
+    initialize_conv_parameters, initialize_cnn_parameters,
+    initialize_cnn_bn_parameters, initialize_cnn_bn_running_stats
+)
 
 

@@ -9,7 +9,7 @@ A fully-functional deep learning framework built from scratch using only NumPy. 
 
 | Dataset | Accuracy | Architecture |
 |---------|----------|--------------|
-| **MNIST** | 98.54%+ | [784, 256, 128, 64, 32, 10] |
+| **MNIST** | 98.54% | [784, 256, 128, 64, 32, 10] |
 | **Fashion-MNIST** | 90.56% | [784, 512, 256, 128, 64, 10] |
 
 ### Convolutional Neural Networks (CNN)

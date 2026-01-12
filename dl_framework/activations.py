@@ -83,3 +83,29 @@ def tanh_backward(dA, cache):
     A = np.tanh(Z)
     dZ = dA * (1 - A**2)
     return dZ
+
+
+def linear_activation(Z):
+    """
+    Linear (identity) activation for regression tasks.
+    
+    Arguments:
+    Z -- pre-activation values, any shape
+    
+    Returns:
+    A -- same as Z (identity function)
+    cache -- Z for backward pass
+    """
+    A = Z
+    cache = Z
+    return A, cache
+
+
+def linear_backward(dA, cache):
+    """
+    Backward propagation for linear activation.
+    
+    The derivative of identity function is 1, so dZ = dA.
+    """
+    dZ = dA
+    return dZ
